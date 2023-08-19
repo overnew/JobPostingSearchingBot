@@ -45,6 +45,6 @@ def regex2(event, client, message, say):
   
 
 if __name__ == '__main__':
-    handler = SocketModeHandler(app_token=config.app_token,app=app)
+    handler = SocketModeHandler(app_token=os.environ['app_token'],app=app)
     handler.start()
     

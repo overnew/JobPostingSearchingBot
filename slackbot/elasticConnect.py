@@ -33,5 +33,3 @@ def getQueryToCloud():
   
   #print(ret)
   return ret
-
-getQueryToCloud()
