@@ -1,0 +1,10 @@
+version: "4.0"
+services:
+  backend:
+    image: "everenew/slackbot:pass"
+    ports:
+      - "80:3000"
+    restart: "always"
+#    environment:
+#      - app_token=xapp-1-A05MJ1DU5H8-5732052563634-d5a5ee1c380ce553f24fc7931b163fa043d25b0856b2fa25c44e52b8f2c2a905
+#      - bot_token=xoxb-5587311786902-5731974575699-8fw9P7aIKqIZtFasbpDpeJaJ
