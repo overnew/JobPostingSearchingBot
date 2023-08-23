@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 
 COPY slackbot/ .
 
-CMD ["python", "./test.py"]
+CMD ["python", "./bot.py"]
