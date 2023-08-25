@@ -38,13 +38,13 @@ jobs:
     - name: Push the Docker image
       run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
-    - name: Deploy BeanStalk
-      uses: einaregilsson/beanstalk-deploy@v21
-      with:
-        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        application_name: 001_test_app
-        environment_name: 001testapp-env
-        version_label: slack-deploy-${{ github.run_number }}
-        region: ap-northeast-2
-        deployment_package: docker-compose.yml
+#    - name: Deploy BeanStalk
+#      uses: einaregilsson/beanstalk-deploy@v21
+#      with:
+#        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#        application_name: 001_test_app
+#        environment_name: 001testapp-env
+#        version_label: slack-deploy-${{ github.run_number }}
+#        region: ap-northeast-2
+#        deployment_package: docker-compose.yml

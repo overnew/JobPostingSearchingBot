@@ -20,8 +20,6 @@ class ElasticCloud:
 
     def search_query_by_workflow(self, data_dict: dict) -> str:
         resource = data_dict['출처']
-        print("출처")
-        print(resource)
         ret = ''
 
         if '프로그래머스' in resource:
@@ -33,13 +31,13 @@ class ElasticCloud:
         return ret
 
     def __search_query_by_workflow_index(self, index_name, data_dict: dict) -> str:
-        condition = []
+        condition = [QueryMaker.due_day_unable_query()]
 
         if data_dict['키워드'] != '':
             condition.append(QueryMaker.keyword_query(data_dict['키워드']))
 
-        # if data_dict['공고 등록일자'] != '':
-        #     condition.append(QueryMaker.keyword_query(data_dict['키워드']))
+        if data_dict['공고 등록일자'] != '':
+            condition.append(QueryMaker.crawl_day_query(data_dict['공고 등록일자']))
 
         if data_dict['경력'] != '':
             condition.append(QueryMaker.career_query(data_dict['경력']))
@@ -64,15 +62,22 @@ class ElasticCloud:
 
     def __get_contain_keyword_by_index_name(self, index_name: str, keyword_form: str):
         ret = self.client.search(index=index_name, query={
-            "query_string": {
-                "query": keyword_form
+            "bool": {
+                "filter": [
+                    QueryMaker.due_day_unable_query(),
+                    {
+                        "query_string": {
+                            "query": keyword_form
+                        }
+                    }
+                ]
             }
         })
         return self.__reform_query_result(ret)
 
     def get_recent_posting(self) -> str:
-        ret = self.__get_recent_posting_by_index_name(self.__worknet_index_name)
-        ret += self.__get_recent_posting_by_index_name(self.__programmers_index_name)
+        ret = self.__get_recent_posting_by_index_name(self.__programmers_index_name)
+        # ret += self.__get_recent_posting_by_index_name(self.__worknet_index_name)
 
         return ret
 
@@ -80,6 +85,7 @@ class ElasticCloud:
         ret = self.client.search(index=index_name, query={
             "bool": {
                 "filter": [
+                    QueryMaker.due_day_unable_query(),
                     {
                         "range": {
                             "due": {
@@ -99,12 +105,20 @@ class ElasticCloud:
 
         for i, row in enumerate(ret['hits']['hits']):
             data = row['_source']
+            title = "*" + data['title'] + "*"
             company = "회사: " + data['company']
-            title = "공고명: " + data['title']
             location = "근무 위치: " + data['location']
             career = "경력: " + data['career']
             link = data['link']
-            reform += company + "\n" + title + "\n" + location + "\n" + career + "\n" + link + line_cap
+
+            if 'salary' in data:
+                salary = "급여: "
+                if 'salary_type' in data and data['salary_type'] != '회사내규에 따름':
+                    salary += data['salary_type'] + " "
+
+                salary += data['salary']
+            else:
+                salary = "급여: 추후 협의"
+            reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + link + line_cap
 
         return reform
-

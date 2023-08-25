@@ -1,5 +1,5 @@
 import re
-
+from datetime import date, timedelta
 
 def keyword_query(keyword: str):
     keyword_from = "*" + keyword + "*"
@@ -11,10 +11,20 @@ def keyword_query(keyword: str):
     return query
 
 
-def crawl_day_query(day: str):
+def due_day_unable_query():
     query = {
         "range": {
             "due": {
+                "gte": date.today() - timedelta(days=1)
+            }
+        }
+    }
+    return query
+
+def crawl_day_query(day: str):
+    query = {
+        "range": {
+            "crawle_day": {
                 "gte": day
             }
         }
