@@ -103,13 +103,20 @@ class ElasticCloud:
         line_cap = "\n\n\n"
         reform = ""
 
+        sort_dict = dict()
+
         for i, row in enumerate(ret['hits']['hits']):
-            data = row['_source']
+            data = row['_source']  # 각 공지 데이터
+
             title = "*" + data['title'] + "*"
             company = "회사: " + data['company']
             location = "근무 위치: " + data['location']
             career = "경력: " + data['career']
             link = data['link']
+            try:
+                crawling_day = data['crawle_day']
+            except:
+                crawling_day = None
 
             if 'salary' in data:
                 salary = "급여: "
@@ -119,6 +126,37 @@ class ElasticCloud:
                 salary += data['salary']
             else:
                 salary = "급여: 추후 협의"
-            reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + link + line_cap
+
+            sort_key = self.__gen_sorting_key_by_crawle_day(crawling_day)
+            post_data = title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "\n" + "공고 등록일: " + str(
+                sort_key) + link + line_cap
+
+            if sort_key in sort_dict:
+                sort_dict[sort_key].append(post_data)
+            else:
+                sort_dict[sort_key] = [post_data]
+
+            # reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n"+ link + line_cap
+
+        sorted_keys = sorted(sort_dict, reverse=True)
+        for key in sorted_keys:
+            for append_data in sort_dict[key]:
+                reform += append_data
 
         return reform
+
+    def __gen_sorting_key_by_crawle_day(self, crawle_day: str):
+        sort_key = 0
+
+        if crawle_day is not None:
+            date_arr = crawle_day.split("-")
+
+            if len(date_arr) != 3:  # 정확한 날짜 형식이 아닌 경우
+                return sort_key
+
+            sort_key += int(date_arr[0]) * 100
+            sort_key += int(date_arr[1])
+            sort_key *= 100
+            sort_key += int(date_arr[2])
+
+        return sort_key
