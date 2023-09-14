@@ -128,8 +128,7 @@ class ElasticCloud:
                 salary = "급여: 추후 협의"
 
             sort_key = self.__gen_sorting_key_by_crawle_day(crawling_day)
-            post_data = title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "\n" + "공고 등록일: " + str(
-                sort_key) + link + line_cap
+            post_data = title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "공고 등록일: " + str(sort_key) + "\n" +  link + line_cap
 
             if sort_key in sort_dict:
                 sort_dict[sort_key].append(post_data)
