@@ -6,8 +6,8 @@ import os
 
 
 class ElasticCloud:
-    __worknet_index_name = 'worknet_final'
-    __programmers_index_name = 'programmers_final'
+    __worknet_index_name = 'worknet_final_ver2'
+    __programmers_index_name = 'programmers_crawle_test'
 
     def __init__(self):
         self.ELASTIC_PASSWORD = os.environ['ELASTIC_CLOUD_PASSWORD']
