@@ -8,6 +8,7 @@ import os
 class ElasticCloud:
     __worknet_index_name = 'worknet_final_ver2'
     __programmers_index_name = 'programmers_crawle_test'
+    __return_post_max_size = 15
 
     def __init__(self):
         self.ELASTIC_PASSWORD = os.environ['ELASTIC_CLOUD_PASSWORD']
@@ -61,7 +62,9 @@ class ElasticCloud:
         return ret
 
     def __get_contain_keyword_by_index_name(self, index_name: str, keyword_form: str):
-        ret = self.client.search(index=index_name, query={
+        ret = self.client.search(index=index_name, size=self.__return_post_max_size, sort=[{
+            "crawle_day": {"order": "desc"}
+        }], query={
             "bool": {
                 "filter": [
                     QueryMaker.due_day_unable_query(),
@@ -82,7 +85,9 @@ class ElasticCloud:
         return ret
 
     def __get_recent_posting_by_index_name(self, index_name: str) -> str:
-        ret = self.client.search(index=index_name, query={
+        ret = self.client.search(index=index_name, size=self.__return_post_max_size, sort=[{
+            "crawle_day": {"order": "desc"}
+        }], query={
             "bool": {
                 "filter": [
                     QueryMaker.due_day_unable_query(),
@@ -103,8 +108,6 @@ class ElasticCloud:
         line_cap = "\n\n\n"
         reform = ""
 
-        sort_dict = dict()
-
         for i, row in enumerate(ret['hits']['hits']):
             data = row['_source']  # 각 공지 데이터
 
@@ -113,6 +116,7 @@ class ElasticCloud:
             location = "근무 위치: " + data['location']
             career = "경력: " + data['career']
             link = data['link']
+
             try:
                 crawling_day = data['crawle_day']
             except:
@@ -127,35 +131,6 @@ class ElasticCloud:
             else:
                 salary = "급여: 추후 협의"
 
-            sort_key = self.__gen_sorting_key_by_crawle_day(crawling_day)
-            post_data = title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "공고 등록일: " + str(sort_key) + "\n" +  link + line_cap
-
-            if sort_key in sort_dict:
-                sort_dict[sort_key].append(post_data)
-            else:
-                sort_dict[sort_key] = [post_data]
-
-            # reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n"+ link + line_cap
-
-        sorted_keys = sorted(sort_dict, reverse=True)
-        for key in sorted_keys:
-            for append_data in sort_dict[key]:
-                reform += append_data
+            reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "공고 등록일: " + crawling_day + "\n" + link + line_cap
 
         return reform
-
-    def __gen_sorting_key_by_crawle_day(self, crawle_day: str):
-        sort_key = 0
-
-        if crawle_day is not None:
-            date_arr = crawle_day.split("-")
-
-            if len(date_arr) != 3:  # 정확한 날짜 형식이 아닌 경우
-                return sort_key
-
-            sort_key += int(date_arr[0]) * 100
-            sort_key += int(date_arr[1])
-            sort_key *= 100
-            sort_key += int(date_arr[2])
-
-        return sort_key
