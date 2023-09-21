@@ -6,7 +6,7 @@ import os
 
 
 class ElasticCloud:
-    __worknet_index_name = 'worknet_final_ver2'
+    __worknet_index_name = 'worknet_crawle_test2'
     __programmers_index_name = 'programmers_crawle_test'
     __return_post_max_size = 15
 
