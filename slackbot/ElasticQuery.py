@@ -41,12 +41,19 @@ class ElasticCloud:
             condition.append(QueryMaker.crawl_day_query(data_dict['공고 등록일자']))
 
         if data_dict['경력'] != '':
-            condition.append(QueryMaker.career_query(data_dict['경력']))
+            search_word: str = data_dict['경력']
+
+            if search_word == "경력 무관" and index_name == self.__worknet_index_name:
+                search_word = "워크넷 경력 무관"
+
+            condition.append(QueryMaker.career_query(search_word))
 
         if data_dict['근무 위치'] != '':
             condition.append(QueryMaker.location_query(data_dict['근무 위치']))
 
-        ret = self.client.search(index=index_name, query={
+        ret = self.client.search(index=index_name, size=self.__return_post_max_size, sort=[{
+            "crawle_day": {"order": "desc"}
+        }], query={
             "bool": {
                 "filter": condition
             }
@@ -115,7 +122,7 @@ class ElasticCloud:
             company = "회사: " + data['company']
             location = "근무 위치: " + data['location']
             career = "경력: " + data['career']
-            link = data['link']
+            link = "*<" + data['link'] + "|상세 공고 바로가기>*"
 
             try:
                 crawling_day = data['crawle_day']

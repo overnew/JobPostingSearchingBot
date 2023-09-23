@@ -1,11 +1,12 @@
 import re
 from datetime import date, timedelta
 
+
 def keyword_query(keyword: str):
     keyword_from = "*" + keyword + "*"
     query = {
         "query_string": {
-                "query": keyword_from
+            "query": keyword_from
         }
     }
     return query
@@ -21,6 +22,7 @@ def due_day_unable_query():
     }
     return query
 
+
 def crawl_day_query(day: str):
     query = {
         "range": {
@@ -32,9 +34,11 @@ def crawl_day_query(day: str):
     return query
 
 
-def career_query(data:str):
+def career_query(data: str):
     if data == '경력 무관':
         return __career_none_query("무관")
+    elif data == "워크넷 경력 무관":
+        return __career_none_query("신입/경력")
     elif data == '신입':
         return __career_none_query("신입")
     else:
@@ -64,7 +68,7 @@ def __career_range_query(start: int):
     return query
 
 
-def location_query(location:str):
+def location_query(location: str):
     query = {
         "match": {
             "location": location
