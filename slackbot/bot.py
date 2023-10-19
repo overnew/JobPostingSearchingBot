@@ -33,14 +33,18 @@ def regex(event, client, message, say):
     say('eat burger')
 
 
-@app.message(re.compile("help"))
-def send_help_message(say):
+@app.message(re.compile("(help|도움|도움말)"))
+def send_help_message(message,say):
+    if ":mag:" in message["text"]:
+        return
+
     info = "*다양한 조건 검색 하려면 상단의 책갈피에서 워크플로우로 제출해 주세요!*\n\n\n " \
+           "*채용 공고 조건 상세 검색하기*\n상단의 채널 북마크에서 워크플로우를 작성해 제출해주세요!\n\n" \
            "*검색:<검색할 키워드>*\n해당 키워드가 들어있는 모든 채용공고를 검색해 드려요!\n\n" \
            "*최신 공고*\n 어제부터 오늘까지 수집된 채용 공고를 보여 드려요! (프로그래머스 한정)\n\n" \
            "*주요 공고*\n 대기업의 취업 공고 홈페이지 리스트를 보여드려요!\n\n" \
            "*개발 정보*\n 서비스의 소스코드 링크를 보여드려요!\n\n" \
-           "*help*\n 도움말을 다시 보여드려요!"
+           "*help*\n 도움말을 다시 보여드려요! 🔍"
 
     say(rap_block(info))
 
@@ -126,6 +130,7 @@ def exe_workflow(event, client, message, say):
     if data_dict['공고 등록일자'] != '':
         try:
             check_date = data_dict['공고 등록일자'].replace(" ", "")
+            check_date = "20" + check_date
             check_date = datetime.datetime.strptime(check_date, '%Y-%m-%d').strftime('%Y-%m-%d')
             data_dict['공고 등록일자'] = check_date
         except:

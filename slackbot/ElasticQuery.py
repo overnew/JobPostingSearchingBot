@@ -8,7 +8,7 @@ import os
 class ElasticCloud:
     __worknet_index_name = 'worknet_crawle_test2'
     __programmers_index_name = 'programmers_crawle_test'
-    __return_post_max_size = 15
+    __return_post_max_size = 12
 
     def __init__(self):
         self.ELASTIC_PASSWORD = os.environ['ELASTIC_CLOUD_PASSWORD']
@@ -118,11 +118,11 @@ class ElasticCloud:
         for i, row in enumerate(ret['hits']['hits']):
             data = row['_source']  # 각 공지 데이터
 
-            title = "*" + data['title'] + "*"
+            title = "*<" + data['link'] + "|" + data['title'] + ">*"
             company = "회사: " + data['company']
             location = "근무 위치: " + data['location']
             career = "경력: " + data['career']
-            link = "*<" + data['link'] + "|상세 공고 바로가기>*"
+            # link = "*<" + data['link'] + "|상세 공고 바로가기>*"
 
             try:
                 crawling_day = data['crawle_day']
@@ -138,6 +138,6 @@ class ElasticCloud:
             else:
                 salary = "급여: 추후 협의"
 
-            reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "공고 등록일: " + crawling_day + "\n" + link + line_cap
+            reform += title + "\n" + company + "\n" + location + "\n" + career + "\n" + salary + "\n" + "공고 등록일: " + crawling_day + line_cap
 
         return reform
