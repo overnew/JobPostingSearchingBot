@@ -1,13 +1,15 @@
 import re
 import os
+import datetime
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from ElasticQuery import ElasticCloud
-import datetime
+from Subscribe import SubscribeDataSaver
 
 bot_token = os.environ['bot_token']
 app = App(token=bot_token)
 cloud = ElasticCloud()
+sub = SubscribeDataSaver()
 
 
 @app.event("app_mention")  # 앱을 언급했을 때
@@ -38,9 +40,8 @@ def send_help_message(message,say):
     if ":mag:" in message["text"]:
         return
 
-    info = "*다양한 조건 검색 하려면 상단의 책갈피에서 워크플로우로 제출해 주세요!*\n\n\n " \
-           "*채용 공고 조건 상세 검색하기*\n상단의 채널 북마크에서 워크플로우를 작성해 제출해주세요!\n\n" \
-           "*검색:<검색할 키워드>*\n해당 키워드가 들어있는 모든 채용공고를 검색해 드려요!\n\n" \
+    info = "*채용 공고 구독 기능과 다양한 Command를 확인하려면 캔버스를 참조해주세요!*\n" \
+           "*<https://start-aws.slack.com/docs/T04VBKA4L4Q/F063ABZCF0C|구독 및 Command 사용 방법>*\n\n " \
            "*최신 공고*\n 어제부터 오늘까지 수집된 채용 공고를 보여 드려요! (프로그래머스 한정)\n\n" \
            "*주요 공고*\n 대기업의 취업 공고 홈페이지 리스트를 보여드려요!\n\n" \
            "*개발 정보*\n 서비스의 소스코드 링크를 보여드려요!\n\n" \
@@ -104,6 +105,22 @@ def queryStart(event, client, message, say):
     say(ret)
     #say(rap_block(ret))
 
+@app.command("/검색")
+def handle_search_command(ack, body, logger, say):
+    keyword = body['text'].replace("검색:", "").lstrip()
+
+    if len(keyword) <= 1:
+        say("두글자 이상으로 검색해 주세요!")
+        return
+
+    ret = cloud.get_contain_keyword(keyword)
+
+    if ret == "":
+        ret = "검색된 데이터가 없습니다..."
+
+    ack()
+    say(ret)
+
 @app.message(re.compile("질의 시작"))
 def exe_workflow(event, client, message, say):
     workflow_body: list = event['text'].split("\n*-조건-*\n")[1].split("\n")
@@ -144,6 +161,53 @@ def exe_workflow(event, client, message, say):
         ret = "검색된 데이터가 없습니다..."
 
     say(ret)
+
+
+@app.command("/구독")
+def handle_subscribe_command(ack, body, logger, say):
+    print(body)
+    logger.info(body)
+
+    conversations_response = app.client.conversations_open(users=body['user_id'])
+    channel_id = conversations_response['channel']['id']
+
+    #dynamo에 저장
+    sub.save_subscribe_data(user_id=body['user_id'] ,keyword=body['text'] ,channel_id=channel_id)
+
+    ack()
+
+    response_message = "구독 완료! \n이제 매일 *" + body['text'] + "* 에 대한 채용 공고를 알려드립니다!"
+
+    result = app.client.chat_postMessage(
+        channel=channel_id,
+        text= response_message
+    )
+
+    response_message = "<@" +body['user_id']+"> 님이 키워드 " + response_message
+    say(response_message)
+
+
+@app.command("/구독취소")
+def handle_unsubscribe_command(ack, body, logger, say):
+    print(body)
+    logger.info(body)
+
+    conversations_response = app.client.conversations_open(users=body['user_id'])
+    channel_id = conversations_response['channel']['id']
+
+    #dynamo에서 삭제
+    sub.delete_subscribe_data(user_id=body['user_id'], channel_id=channel_id)
+    ack()
+
+    response_message = "구독 취소 완료! \n이제 DM이 전송 되지 않습니다."
+
+    result = app.client.chat_postMessage(
+        channel=channel_id,
+        text= response_message
+    )
+
+    response_message = "<@" +body['user_id']+"> 님이 키워드 " + response_message
+    say(response_message)
 
 if __name__ == '__main__':
     handler = SocketModeHandler(app_token=os.environ['app_token'], app=app)
