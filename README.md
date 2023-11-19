@@ -9,7 +9,14 @@
 ## 구현 기능
 - 구독
   - /구독 "keyword" command로 매일 오전 9시에 키워드와 관련된 최신 채용 공고를 DM으로 받을 수 있음
+
+  <br>
+<img width="80%" src= "https://github.com/overnew/JobPostingSearchingBot/assets/43613584/a580f4cd-0420-402a-a55e-9ec74f91c114">
+
+<br>
+<img width="80%" src= "https://github.com/overnew/JobPostingSearchingBot/assets/43613584/af9871cc-2e94-4c72-8576-e42c0ce2cb51">
 <br><br>
+
 - 간편 검색
   - /구독 "keyword"로 관련된 채용 공고를 최신 순으로 빠르게 검색해줍니다.
 <br><br>
