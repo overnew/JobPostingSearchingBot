@@ -34,6 +34,10 @@
 ## 서비스 전체 아키텍처
  <br>
 
+<img width="80%" src="https://github.com/overnew/JobPostingCrawler/assets/43613584/cd8fc9a4-1ff4-44c9-ab92-99d5d4e8ccba"/>
+
+<br><br>
+
 - 크롤링과 Slack Bot
 
 <img width="80%" src="https://github.com/overnew/JobPostingCrawler/assets/43613584/ce609c86-8cff-4ca0-8d4e-b9a2e5b70b17"/>
