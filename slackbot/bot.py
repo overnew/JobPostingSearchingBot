@@ -35,7 +35,7 @@ def regex(event, client, message, say):
 
 
 @app.message(re.compile("(help|도움|도움말)"))
-def send_help_message(message,say):
+def send_help_message(message, say):
     if ":mag:" in message["text"]:
         return
 
@@ -102,13 +102,13 @@ def query_start(event, client, message, say):
 
     say(result)
 
+
 def query_by_paging(paging_data):
     paging_data_arr = paging_data.split('/')
     paging_cnt = int(paging_data_arr[0]) + 1
     keyword = paging_data_arr[3]
     search_after = [float(paging_data_arr[1]), int(paging_data_arr[2])]
     conditions = json.loads(paging_data_arr[4].replace("'", '"'))
-
 
     ret = cloud.get_contain_keyword_paging(search_after, keyword, conditions)
 
@@ -121,7 +121,6 @@ def query_by_paging(paging_data):
         result = make_paging_button(paging_cnt, ret["text"], ret['search_after'], keyword, conditions)
 
     return result
-
 
 
 @app.command("/검색")
@@ -145,6 +144,7 @@ def handle_search_command(ack, body, logger, say):
     ack()
     say(result)
 
+
 @app.message(re.compile("질의 시작"))
 def exe_workflow(event, client, message, say):
     workflow_body: list = event['text'].split("\n*-조건-*\n")[1].split("\n")
@@ -162,7 +162,7 @@ def exe_workflow(event, client, message, say):
             print("except occur from ")
             print(row)
 
-    #print(data_dict)
+    # print(data_dict)
 
     if len(data_dict['키워드']) <= 1:
         say("키워드는 두글자 이상부터 가능합니다!")
@@ -196,14 +196,14 @@ def exe_workflow(event, client, message, say):
 
 @app.command("/구독")
 def handle_subscribe_command(ack, body, logger, say):
-    #print(body)
+    # print(body)
     logger.info(body)
 
     conversations_response = app.client.conversations_open(users=body['user_id'])
     channel_id = conversations_response['channel']['id']
 
-    #dynamo에 저장
-    sub.save_subscribe_data(user_id=body['user_id'] ,keyword=body['text'] ,channel_id=channel_id)
+    # dynamo에 저장
+    sub.save_subscribe_data(user_id=body['user_id'], keyword=body['text'], channel_id=channel_id)
 
     ack()
 
@@ -211,15 +211,15 @@ def handle_subscribe_command(ack, body, logger, say):
 
     result = app.client.chat_postMessage(
         channel=channel_id,
-        text= response_message
+        text=response_message
     )
 
-    response_message = "<@" +body['user_id']+"> 님이 키워드 " + response_message
+    response_message = "<@" + body['user_id'] + "> 님이 키워드 " + response_message
     say(response_message)
 
 
 # 페이징 용도의 버튼
-def make_paging_button(cnt, text, search_after, keyword, conditions = []):
+def make_paging_button(cnt, text, search_after, keyword, conditions=[]):
     if cnt >= __paging_max:
         return text
 
@@ -250,6 +250,10 @@ def make_paging_button(cnt, text, search_after, keyword, conditions = []):
 
 @app.action("paging")
 def handle_some_action(ack, body, logger, say):
+    channel = body['channel']['id']
+    ts = body['message_ts']
+    original_message = body['original_message']['text']
+
     response = body['actions'][0]['value']
     paging_data = body['actions'][0]['name']
 
@@ -257,18 +261,33 @@ def handle_some_action(ack, body, logger, say):
         ret = query_by_paging(paging_data)
         say(ret)
 
+    disable_button(channel, ts, original_message)
     ack()
-    #logger.info(body)
+    # logger.info(body)
+
+
+def disable_button(channel, ts, original_message):
+    app.client.chat_update(channel=channel, ts=ts, attachments=disable_attach, text=original_message)
+
+
+disable_attach = [
+    {
+        "title": "추가 질의 되었습니다!",
+        "color": "#E25372"
+
+    }
+]
+
 
 @app.command("/구독취소")
 def handle_unsubscribe_command(ack, body, logger, say):
-    #print(body)
+    # print(body)
     logger.info(body)
 
     conversations_response = app.client.conversations_open(users=body['user_id'])
     channel_id = conversations_response['channel']['id']
 
-    #dynamo에서 삭제
+    # dynamo에서 삭제
     sub.delete_subscribe_data(user_id=body['user_id'], channel_id=channel_id)
     ack()
 
@@ -276,11 +295,12 @@ def handle_unsubscribe_command(ack, body, logger, say):
 
     result = app.client.chat_postMessage(
         channel=channel_id,
-        text= response_message
+        text=response_message
     )
 
-    response_message = "<@" +body['user_id']+"> 님이 키워드 " + response_message
+    response_message = "<@" + body['user_id'] + "> 님이 키워드 " + response_message
     say(response_message)
+
 
 if __name__ == '__main__':
     handler = SocketModeHandler(app_token=os.environ['app_token'], app=app)
