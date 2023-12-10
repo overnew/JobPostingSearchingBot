@@ -9,7 +9,7 @@ class ElasticCloud:
     #__worknet_index_name = 'worknet_crawle_test2'
     #__programmers_index_name = 'programmers_crawle_test'
     __union_index_name = 'job_post_union_ver1'
-    __return_post_max_size = 10
+    max_size_searched_post = 10
 
     def __init__(self):
         self.ELASTIC_PASSWORD = os.environ['ELASTIC_CLOUD_PASSWORD']
