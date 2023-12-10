@@ -1,6 +1,7 @@
 import re
 import os
 import datetime
+import json
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from ElasticQuery import ElasticCloud
@@ -10,6 +11,7 @@ bot_token = os.environ['bot_token']
 app = App(token=bot_token)
 cloud = ElasticCloud()
 sub = SubscribeDataSaver()
+__paging_max = 4
 
 
 @app.event("app_mention")  # 앱을 언급했을 때
@@ -23,9 +25,6 @@ def bot_added(event, client, message, say):
 
 
 def __introduce_app(event, client, message, say):
-    #print('event:', event)
-    #print('client:', client)
-    #print('message:', message)
     say(f'저는 여러 사이트의 채용 공고를 한번에 검색해 주는 봇 TATTOO입니다. 안녕하세요!\n'
         f'사용 설명을 확인 하려면 \'help\'를 입력해주세요! <@{event["user"]}>')
 
@@ -42,7 +41,6 @@ def send_help_message(message,say):
 
     info = "*채용 공고 구독 기능과 다양한 Command를 확인하려면 캔버스를 참조해주세요!*\n" \
            "*<https://start-aws.slack.com/docs/T04VBKA4L4Q/F063ABZCF0C|구독 및 Command 사용 방법>*\n\n " \
-           "*최신 공고*\n 어제부터 오늘까지 수집된 채용 공고를 보여 드려요! (프로그래머스 한정)\n\n" \
            "*주요 공고*\n 대기업의 취업 공고 홈페이지 리스트를 보여드려요!\n\n" \
            "*개발 정보*\n 서비스의 소스코드 링크를 보여드려요!\n\n" \
            "*help*\n 도움말을 다시 보여드려요! 🔍"
@@ -84,13 +82,8 @@ def show_main_page_list(event, client, message, say):
     say(rap_block(info))
 
 
-@app.message(re.compile("최신 공고"))
-def queryStart(event, client, message, say):
-    say(cloud.get_recent_posting())
-
-
 @app.message(re.compile("검색:"))
-def queryStart(event, client, message, say):
+def query_start(event, client, message, say):
     keyword = event['text'].replace("검색:", "").lstrip()
 
     if len(keyword) <= 1:
@@ -98,12 +91,38 @@ def queryStart(event, client, message, say):
         return
 
     ret = cloud.get_contain_keyword(keyword)
+    result = ret["text"]
+    hits = ret['hits']
 
-    if ret == "":
-        ret = "검색된 데이터가 없습니다..."
+    if hits == 0:
+        result = "검색된 데이터가 없습니다..."
+    elif hits == cloud.max_size_searched_post:
+        say(make_paging_button(0, ret["text"], ret['search_after'], keyword))
+        return
 
-    say(ret)
-    #say(rap_block(ret))
+    say(result)
+
+def query_by_paging(paging_data):
+    paging_data_arr = paging_data.split('/')
+    paging_cnt = int(paging_data_arr[0]) + 1
+    keyword = paging_data_arr[3]
+    search_after = [float(paging_data_arr[1]), int(paging_data_arr[2])]
+    conditions = json.loads(paging_data_arr[4].replace("'", '"'))
+
+
+    ret = cloud.get_contain_keyword_paging(search_after, keyword, conditions)
+
+    result = ret["text"]
+    hits = ret['hits']
+    conditions = ret['filter_conditions']
+    if hits == 0:
+        result = "검색된 데이터가 없습니다..."
+    elif hits == cloud.max_size_searched_post:
+        result = make_paging_button(paging_cnt, ret["text"], ret['search_after'], keyword, conditions)
+
+    return result
+
+
 
 @app.command("/검색")
 def handle_search_command(ack, body, logger, say):
@@ -114,12 +133,17 @@ def handle_search_command(ack, body, logger, say):
         return
 
     ret = cloud.get_contain_keyword(keyword)
+    result = ret["text"]
+    hits = ret['hits']
 
-    if ret == "":
-        ret = "검색된 데이터가 없습니다..."
+    if hits == 0:
+        result = "검색된 데이터가 없습니다..."
+    elif hits == cloud.max_size_searched_post:
+        say(make_paging_button(0, ret["text"], ret['search_after'], keyword))
+        return
 
     ack()
-    say(ret)
+    say(result)
 
 @app.message(re.compile("질의 시작"))
 def exe_workflow(event, client, message, say):
@@ -138,7 +162,7 @@ def exe_workflow(event, client, message, say):
             print("except occur from ")
             print(row)
 
-    print(data_dict)
+    #print(data_dict)
 
     if len(data_dict['키워드']) <= 1:
         say("키워드는 두글자 이상부터 가능합니다!")
@@ -157,15 +181,22 @@ def exe_workflow(event, client, message, say):
     # print(event['blocks'][0]['elements'])
     ret = cloud.search_query_by_workflow(data_dict)
 
-    if ret == "":
-        ret = "검색된 데이터가 없습니다..."
+    result = ret["text"]
+    hits = ret['hits']
+    conditions = ret['filter_conditions']
 
-    say(ret)
+    if hits == 0:
+        result = "검색된 데이터가 없습니다..."
+    elif hits == cloud.max_size_searched_post:
+        say(make_paging_button(0, result, ret['search_after'], data_dict['키워드'], conditions))
+        return
+
+    say(result)
 
 
 @app.command("/구독")
 def handle_subscribe_command(ack, body, logger, say):
-    print(body)
+    #print(body)
     logger.info(body)
 
     conversations_response = app.client.conversations_open(users=body['user_id'])
@@ -187,9 +218,51 @@ def handle_subscribe_command(ack, body, logger, say):
     say(response_message)
 
 
+# 페이징 용도의 버튼
+def make_paging_button(cnt, text, search_after, keyword, conditions = []):
+    if cnt >= __paging_max:
+        return text
+
+    paging_data = str(cnt) + '/' + str(search_after[0]) + '/' + str(search_after[1]) \
+                  + '/' + keyword + '/' + str(conditions)
+    paging_button = {
+        "text": text + '\n\n',
+        "attachments": [
+            {
+                "text": "좀더 확인 하실래요?",
+                "fallback": "unable to see more",
+                "callback_id": "paging",
+                "color": "#E25372",
+                "attachment_type": "default",
+                "actions": [
+                    {
+                        "name": paging_data,
+                        "text": "더보기",
+                        "type": "button",
+                        "value": "더보기"
+                    }
+                ]
+            }
+        ]
+    }
+    return paging_button
+
+
+@app.action("paging")
+def handle_some_action(ack, body, logger, say):
+    response = body['actions'][0]['value']
+    paging_data = body['actions'][0]['name']
+
+    if response == "더보기":
+        ret = query_by_paging(paging_data)
+        say(ret)
+
+    ack()
+    #logger.info(body)
+
 @app.command("/구독취소")
 def handle_unsubscribe_command(ack, body, logger, say):
-    print(body)
+    #print(body)
     logger.info(body)
 
     conversations_response = app.client.conversations_open(users=body['user_id'])
