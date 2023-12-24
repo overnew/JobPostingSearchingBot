@@ -2,9 +2,9 @@
 
 <br>
 
-<img width="80%" src= "https://github.com/overnew/JobPostingSearchingBot/assets/43613584/7a4372d4-96c1-48c1-abcc-d2ccda857d28">
+<img width="50%" src= "https://github.com/overnew/JobPostingSearchingBot/assets/43613584/7a4372d4-96c1-48c1-abcc-d2ccda857d28">
 
-<br>
+<br><br><br>
 
 
 
