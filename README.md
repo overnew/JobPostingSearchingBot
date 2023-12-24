@@ -1,5 +1,13 @@
 # JobPostingSearchingBot
 
+<br>
+
+<img width="80%" src= "https://github.com/overnew/JobPostingSearchingBot/assets/43613584/7a4372d4-96c1-48c1-abcc-d2ccda857d28">
+
+<br>
+
+
+
 <strong>Elastic Cloud에서 데이터를 쿼리하는 Slack bot입니다.
 </strong>
 - [크롤러 GitHub 보러가기](https://github.com/overnew/JobPostingCrawler)
@@ -34,7 +42,7 @@
 ## 서비스 전체 아키텍처
  <br>
 
-<img width="80%" src="https://github.com/overnew/JobPostingCrawler/assets/43613584/cd8fc9a4-1ff4-44c9-ab92-99d5d4e8ccba"/>
+<img width="80%" src="https://github.com/overnew/JobPostingSearchingBot/assets/43613584/123857c7-d58d-43de-af2a-823e065b0a46"/>
 
 <br><br>
 
